@@ -3,12 +3,14 @@
 Zumo32U4Motors motors;
 Zumo32U4ButtonA buttonA;
 Zumo32U4ButtonB buttonB;
+Zumo32U4LineSensors lineSensors;
 Zumo32U4ProximitySensors proxSensors;
 
 uint16_t leftSpeed = 100;
 uint16_t rightSpeed = 100;
 uint16_t leftBackSpeed = -100;
 uint16_t rightBackSpeed = -100;
+uint16_t lineSensorValues[5] = { 0, 0, 0, 0, 0 };
 
 void setup() {
   // put your setup code here, to run once:
@@ -21,6 +23,9 @@ void loop() {
   if (buttonA.isPressed()) {
     manualControl();
   } else if (buttonB.isPressed()) {
+    lineSensors.initFiveSensors();
+    proxSensors.initFrontSensor();
+    calibrateLineSensors();
     semiControl();
   }
 
@@ -104,7 +109,7 @@ void manualControl() {
 
       }
 
-      if (incomingByte == 113) {
+      if (incomingByte == 122) {
         running = false;
       }
     }
@@ -112,10 +117,46 @@ void manualControl() {
 }
 
 void semiControl() {
-  proxSensors.read();
-  
+
+  bool running = true;
+  while (running) {
+
+    lineSensors.readCalibrated(lineSensorValues);
+    printReadingsToSerial();
+
+
+  }
+
 }
 
 void fullControl() {
 
+}
+
+void calibrateLineSensors()
+{
+  // To indicate we are in calibration mode, turn on the yellow LED
+  ledYellow(1);
+
+  for (uint16_t i = 0; i < 400; i++)
+  {
+    display.gotoXY(0, 1);
+    display.print(i);
+    lineSensors.calibrate();
+  }
+
+  ledYellow(0);
+}
+
+void printReadingsToSerial()
+{
+  static char buffer[80];
+  sprintf(buffer, %4d %4d %4d %4d %4d\n",
+    lineSensorValues[0],
+    lineSensorValues[1],
+    lineSensorValues[2],
+    lineSensorValues[3],
+    lineSensorValues[4]
+  );
+  Serial.print(buffer);
 }
