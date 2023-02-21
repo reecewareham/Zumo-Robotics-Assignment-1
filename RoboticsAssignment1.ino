@@ -1,10 +1,13 @@
 #include <Zumo32U4.h>
+#include "TurnSensor.h"
 
 Zumo32U4Motors motors;
 Zumo32U4ButtonA buttonA;
 Zumo32U4ButtonB buttonB;
 Zumo32U4LineSensors lineSensors;
 Zumo32U4ProximitySensors proxSensors;
+L3G gyro;
+Zumo32U4LCD lcd;
 
 uint16_t leftSpeed = 100;
 uint16_t rightSpeed = 100;
@@ -17,6 +20,9 @@ void setup() {
   Serial1.begin(9600);
   lineSensors.initFiveSensors();
   proxSensors.initFrontSensor();
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
 }
 
 void loop() {
@@ -119,11 +125,18 @@ void manualControl() {
 
 void semiControl() {
 
+
+  
+
   bool running = true;
+  bool leftWall = false;
+  bool rightWall = false;
+  int leftWallMove = 0;
+  int rightWallMove = 0;
 
   while (running) {
 
-    motors.setSpeeds(100, 100);
+    /*motors.setSpeeds(100, 100);
     delay(200);
     lineSensors.readCalibrated(lineSensorValues);
     printReadingsToSerial();
@@ -144,7 +157,56 @@ void semiControl() {
       motors.setSpeeds(-100,100);
       delay(500);
       motors.setSpeeds(0,0);
+    }*/
+
+    //Move forward initially and read sensors.
+    motors.setSpeeds(100,100);
+    delay(200);
+    lineSensors.readCalibrated(lineSensorValues);
+    printReadingsToSerial();
+
+    //Look left and move forward to check if there is a wall.
+    motors.setSpeeds(-200,200);
+    delay(500);
+    while(!leftWall) {
+      leftWallMove++;
+      motors.setSpeeds(50,50);
+      delay(50);
+      lineSensors.readCalibrated(lineSensorValues);
+      if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
+        leftWall = true;
+        motors.setSpeeds(0,0);
+        for (int i = 0; i < leftWallMove; i++) {
+          motors.setSpeeds(-50,-50);
+          delay(50);
+        }
+        motors.setSpeeds(200,-200);
+        delay(500);
+        leftWallMove = 0;
+      }
     }
+
+    //Look right and move forward to check if there is a wall.
+    motors.setSpeeds(200,-200);
+    delay(500);
+    while(!rightWall) {
+      rightWallMove++;
+      motors.setSpeeds(50,50);
+      delay(50);
+      lineSensors.readCalibrated(lineSensorValues);
+      if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
+        rightWall = true;
+        motors.setSpeeds(0,0);
+        for (int i = 0; i < leftWallMove; i++) {
+          motors.setSpeeds(-50,-50);
+          delay(50);
+        }
+        motors.setSpeeds(-200,200);
+        delay(500);
+        rightWallMove = 0;
+      }
+    }
+
   }
 }
 
@@ -186,4 +248,8 @@ void printReadingsToSerial()
     lineSensorValues[4]
   );
   Serial1.print(buffer);
+}
+
+int32_t getAngle() {
+  return (((int32_t)turnAngle >> 16) *360) >> 16;
 }
