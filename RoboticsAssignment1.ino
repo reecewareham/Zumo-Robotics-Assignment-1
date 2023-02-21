@@ -15,6 +15,8 @@ uint16_t lineSensorValues[5] = { 0, 0, 0, 0, 0 };
 void setup() {
   // put your setup code here, to run once:
   Serial1.begin(9600);
+  lineSensors.initFiveSensors();
+  proxSensors.initFrontSensor();
 }
 
 void loop() {
@@ -23,8 +25,7 @@ void loop() {
   if (buttonA.isPressed()) {
     manualControl();
   } else if (buttonB.isPressed()) {
-    lineSensors.initFiveSensors();
-    proxSensors.initFrontSensor();
+    delay(500);
     calibrateLineSensors();
     semiControl();
   }
@@ -119,14 +120,32 @@ void manualControl() {
 void semiControl() {
 
   bool running = true;
+
   while (running) {
 
+    motors.setSpeeds(100, 100);
+    delay(200);
     lineSensors.readCalibrated(lineSensorValues);
     printReadingsToSerial();
 
-
+    if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
+      motors.setSpeeds(0,0);
+      delay(500);
+      motors.setSpeeds(-100, -100);
+      delay(500);
+      motors.setSpeeds(-200, 200);
+      delay(500);
+      motors.setSpeeds(0,0);
+    } else if (lineSensorValues[0] > 50) {
+      motors.setSpeeds(100,-100);
+      delay(500);
+      motors.setSpeeds(0,0);
+    } else if (lineSensorValues[4] > 50) {
+      motors.setSpeeds(-100,100);
+      delay(500);
+      motors.setSpeeds(0,0);
+    }
   }
-
 }
 
 void fullControl() {
@@ -138,12 +157,20 @@ void calibrateLineSensors()
   // To indicate we are in calibration mode, turn on the yellow LED
   ledYellow(1);
 
-  for (uint16_t i = 0; i < 400; i++)
+  for(uint16_t i = 0; i < 120; i++)
   {
-    display.gotoXY(0, 1);
-    display.print(i);
+    if (i > 30 && i <= 90)
+    {
+      motors.setSpeeds(-200, 200);
+    }
+    else
+    {
+      motors.setSpeeds(200, -200);
+    }
+
     lineSensors.calibrate();
   }
+  motors.setSpeeds(0, 0);
 
   ledYellow(0);
 }
@@ -151,12 +178,12 @@ void calibrateLineSensors()
 void printReadingsToSerial()
 {
   static char buffer[80];
-  sprintf(buffer, %4d %4d %4d %4d %4d\n",
+  sprintf(buffer, "%4d %4d %4d %4d %4d\n",
     lineSensorValues[0],
     lineSensorValues[1],
     lineSensorValues[2],
     lineSensorValues[3],
     lineSensorValues[4]
   );
-  Serial.print(buffer);
+  Serial1.print(buffer);
 }
