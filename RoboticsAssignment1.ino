@@ -9,6 +9,10 @@ Zumo32U4ProximitySensors proxSensors;
 L3G gyro;
 Zumo32U4LCD lcd;
 
+#define LEFT_TURN 90.0
+#define RIGHT_TURN -90.0
+#define TOP_SPEED 150
+
 uint16_t leftSpeed = 100;
 uint16_t rightSpeed = 100;
 uint16_t leftBackSpeed = -100;
@@ -32,7 +36,7 @@ void loop() {
     manualControl();
   } else if (buttonB.isPressed()) {
     delay(500);
-    calibrateLineSensors();
+    //calibrateLineSensors();
     semiControl();
   }
 
@@ -125,87 +129,17 @@ void manualControl() {
 
 void semiControl() {
 
-
-  
-
   bool running = true;
-  bool leftWall = false;
-  bool rightWall = false;
-  int leftWallMove = 0;
-  int rightWallMove = 0;
 
   while (running) {
 
-    /*motors.setSpeeds(100, 100);
-    delay(200);
-    lineSensors.readCalibrated(lineSensorValues);
-    printReadingsToSerial();
-
-    if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
-      motors.setSpeeds(0,0);
-      delay(500);
-      motors.setSpeeds(-100, -100);
-      delay(500);
-      motors.setSpeeds(-200, 200);
-      delay(500);
-      motors.setSpeeds(0,0);
-    } else if (lineSensorValues[0] > 50) {
-      motors.setSpeeds(100,-100);
-      delay(500);
-      motors.setSpeeds(0,0);
-    } else if (lineSensorValues[4] > 50) {
-      motors.setSpeeds(-100,100);
-      delay(500);
-      motors.setSpeeds(0,0);
-    }*/
-
-    //Move forward initially and read sensors.
-    motors.setSpeeds(100,100);
-    delay(200);
-    lineSensors.readCalibrated(lineSensorValues);
-    printReadingsToSerial();
-
-    //Look left and move forward to check if there is a wall.
-    motors.setSpeeds(-200,200);
-    delay(500);
-    while(!leftWall) {
-      leftWallMove++;
-      motors.setSpeeds(50,50);
-      delay(50);
-      lineSensors.readCalibrated(lineSensorValues);
-      if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
-        leftWall = true;
-        motors.setSpeeds(0,0);
-        for (int i = 0; i < leftWallMove; i++) {
-          motors.setSpeeds(-50,-50);
-          delay(50);
-        }
-        motors.setSpeeds(200,-200);
-        delay(500);
-        leftWallMove = 0;
-      }
-    }
-
-    //Look right and move forward to check if there is a wall.
-    motors.setSpeeds(200,-200);
-    delay(500);
-    while(!rightWall) {
-      rightWallMove++;
-      motors.setSpeeds(50,50);
-      delay(50);
-      lineSensors.readCalibrated(lineSensorValues);
-      if ((lineSensorValues[2] > 100) && (lineSensorValues[4] > 50) && (lineSensorValues[0] > 50)) {
-        rightWall = true;
-        motors.setSpeeds(0,0);
-        for (int i = 0; i < leftWallMove; i++) {
-          motors.setSpeeds(-50,-50);
-          delay(50);
-        }
-        motors.setSpeeds(-200,200);
-        delay(500);
-        rightWallMove = 0;
-      }
-    }
+    rotateAngle(LEFT_TURN, TOP_SPEED);
+    delay(1000);
+    rotateAngle(RIGHT_TURN, TOP_SPEED);
+    delay(1000);
+    rotateAngle(RIGHT_TURN, TOP_SPEED);
+    
+    running = false;
 
   }
 }
