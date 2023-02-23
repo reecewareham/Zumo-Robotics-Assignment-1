@@ -1,5 +1,6 @@
+#include <L3G.h>
 #include <Zumo32U4.h>
-#include "TurnSensor.h"
+#include "src/TurnSensor/TurnSensor.h"
 
 Zumo32U4Motors motors;
 Zumo32U4ButtonA buttonA;
@@ -12,6 +13,7 @@ Zumo32U4LCD lcd;
 #define LEFT_TURN 90.0
 #define RIGHT_TURN -90.0
 #define TOP_SPEED 150
+#define TIME 500
 
 uint16_t leftSpeed = 100;
 uint16_t rightSpeed = 100;
@@ -19,14 +21,15 @@ uint16_t leftBackSpeed = -100;
 uint16_t rightBackSpeed = -100;
 uint16_t lineSensorValues[5] = { 0, 0, 0, 0, 0 };
 
+uint32_t avgCorrectionTime = 0;
+uint32_t totalCorrectionTime = 0;
+uint16_t numOfCorrections = 0;
+
 void setup() {
   // put your setup code here, to run once:
   Serial1.begin(9600);
   lineSensors.initFiveSensors();
   proxSensors.initFrontSensor();
-  turnSensorSetup();
-  delay(500);
-  turnSensorReset();
 }
 
 void loop() {
@@ -36,7 +39,8 @@ void loop() {
     manualControl();
   } else if (buttonB.isPressed()) {
     delay(500);
-    //calibrateLineSensors();
+    calibrateLineSensors();
+    delay(2000);
     semiControl();
   }
 
@@ -131,15 +135,14 @@ void semiControl() {
 
   bool running = true;
 
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
+
   while (running) {
 
-    rotateAngle(LEFT_TURN, TOP_SPEED);
-    delay(1000);
-    rotateAngle(RIGHT_TURN, TOP_SPEED);
-    delay(1000);
-    rotateAngle(RIGHT_TURN, TOP_SPEED);
-    
-    running = false;
+    move();
+    //running = false;
 
   }
 }
@@ -150,18 +153,17 @@ void fullControl() {
 
 void calibrateLineSensors()
 {
-  // To indicate we are in calibration mode, turn on the yellow LED
   ledYellow(1);
 
   for(uint16_t i = 0; i < 120; i++)
   {
     if (i > 30 && i <= 90)
     {
-      motors.setSpeeds(-200, 200);
+      motors.setSpeeds(-150, 150);
     }
     else
     {
-      motors.setSpeeds(200, -200);
+      motors.setSpeeds(150, -150);
     }
 
     lineSensors.calibrate();
@@ -186,4 +188,31 @@ void printReadingsToSerial()
 
 int32_t getAngle() {
   return (((int32_t)turnAngle >> 16) *360) >> 16;
+}
+
+void move() {
+
+  moveForward();
+  delay(500);
+  rotateAngle(LEFT_TURN, TOP_SPEED);
+  delay(500);
+  moveForwardLineLeft();
+  delay(500);
+  rotateAngle(RIGHT_TURN, TOP_SPEED);
+  delay(500);
+  rotateAngle(RIGHT_TURN, TOP_SPEED);
+  delay(500);
+  moveForwardLineRight();
+  delay(500);
+  rotateAngle(LEFT_TURN, TOP_SPEED);
+  delay(500);
+
+  /*rotateAngle(RIGHT_TURN, 200);
+  delay(500);
+  rotateAngle(RIGHT_TURN, 200);
+  delay(500);
+  moveForwardLine();
+  delay(500);
+  rotateAngle(LEFT_TURN, 200);
+  delay(500);*/
 }
