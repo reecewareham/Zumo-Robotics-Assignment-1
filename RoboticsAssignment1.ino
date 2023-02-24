@@ -39,7 +39,8 @@ void loop() {
     manualControl();
   } else if (buttonB.isPressed()) {
     delay(500);
-    calibrateLineSensors();
+    Serial1.print("test");
+    //calibrateLineSensors();
     delay(2000);
     semiControl();
   }
@@ -206,13 +207,4 @@ void move() {
   delay(500);
   rotateAngle(LEFT_TURN, TOP_SPEED);
   delay(500);
-
-  /*rotateAngle(RIGHT_TURN, 200);
-  delay(500);
-  rotateAngle(RIGHT_TURN, 200);
-  delay(500);
-  moveForwardLine();
-  delay(500);
-  rotateAngle(LEFT_TURN, 200);
-  delay(500);*/
 }
