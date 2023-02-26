@@ -39,8 +39,7 @@ void loop() {
     manualControl();
   } else if (buttonB.isPressed()) {
     delay(500);
-    Serial1.print("test");
-    //calibrateLineSensors();
+    calibrateLineSensors();
     delay(2000);
     semiControl();
   }

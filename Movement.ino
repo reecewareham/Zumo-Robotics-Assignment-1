@@ -174,9 +174,6 @@ void moveForwardLineLeft() {
   delay(100);
   motors.setSpeeds(0,0);
   delay(100);
-  motors.setSpeeds(-100,-100);
-  delay(300);
-  motors.setSpeeds(0,0);
   lineSensors.readCalibrated(lineSensorValues);
   printReadingsToSerial();
 
@@ -220,15 +217,19 @@ void moveForwardLineLeft() {
 
     if (isWall) {
       Serial1.print("Found left corner. Moving around corner.");
-      motors.setSpeeds(100,100);
-      delay(1500);
+      //motors.setSpeeds(100,100);
+      //delay(1500);
       motors.setSpeeds(0,0);
       rotateAngle(90, 150);
     }
 
     if (timedOut) {
       Serial1.print("No wall detected. Must be left room.");
-      rotateAngle(90, 150);
+      rotateAngle(-90, 150);
+      //motors.setSpeeds(100,100);
+      //delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(90,150);
       motors.setSpeeds(100,100);
       delay(1000);
       motors.setSpeeds(0,0);
@@ -241,7 +242,7 @@ void moveForwardLineLeft() {
       rotateAngle(-90,150);
       delay(100);
       motors.setSpeeds(100,100);
-      delay(1000);
+      delay(1500);
       motors.setSpeeds(0,0);
     }
 
@@ -254,7 +255,10 @@ void moveForwardLineLeft() {
       forwardCorrection();
     }
 
-    delay(50);
+  motors.setSpeeds(-100,-100);
+  delay(300);
+  motors.setSpeeds(0,0);
+  delay(50);
 }
 
 void moveForwardLineRight() {
@@ -288,9 +292,6 @@ void moveForwardLineRight() {
   delay(100);
   motors.setSpeeds(0,0);
   delay(100);
-  motors.setSpeeds(-100,-100);
-  delay(300);
-  motors.setSpeeds(0,0);
   lineSensors.readCalibrated(lineSensorValues);
   printReadingsToSerial();
 
@@ -313,8 +314,8 @@ void moveForwardLineRight() {
         if (timedOut) {
           motors.setSpeeds(0,0);
           delay(200);
-          motors.setSpeeds(-100,-100);
-          delay(2000);
+          //motors.setSpeeds(-100,-100);
+          //delay(2000);
           breakLoop = true;
         }
 
@@ -343,8 +344,12 @@ void moveForwardLineRight() {
     if (timedOut) {
       Serial1.print("No wall detected. Must be right room.");
       rotateAngle(90, 150);
+      //motors.setSpeeds(100,100);
+      //delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(-90,150);
       motors.setSpeeds(100,100);
-      delay(1000);
+      delay(1500);
       motors.setSpeeds(0,0);
 
       rotateAndScan();
@@ -368,7 +373,10 @@ void moveForwardLineRight() {
       forwardCorrection();
     }
 
-    delay(50);
+  motors.setSpeeds(-100,-100);
+  delay(300);
+  motors.setSpeeds(0,0);
+  delay(50);
 }
 
 void forwardCorrection() {
