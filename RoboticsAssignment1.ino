@@ -1,10 +1,13 @@
 #include <L3G.h>
 #include <Zumo32U4.h>
 #include "src/TurnSensor/TurnSensor.h"
+#include <PololuBuzzer.h>
 
+PololuBuzzer buzzer;
 Zumo32U4Motors motors;
 Zumo32U4ButtonA buttonA;
 Zumo32U4ButtonB buttonB;
+Zumo32U4ButtonC buttonC;
 Zumo32U4LineSensors lineSensors;
 Zumo32U4ProximitySensors proxSensors;
 L3G gyro;
@@ -42,6 +45,11 @@ void loop() {
     calibrateLineSensors();
     delay(2000);
     semiControl();
+  } else if (buttonC.isPressed()) {
+    delay(500);
+    calibrateLineSensors();
+    delay(2000);
+    fullControl();
   }
 
 }
@@ -122,6 +130,11 @@ void manualControl() {
         motors.setSpeeds(0, 0);
         ledYellow(0);
 
+      } else if (incomingByte == 32) {
+        ledRed(1);
+        buzzer.playFrequency(500,1000,12);
+        delay(100);
+        ledRed(0);
       }
 
       if (incomingByte == 122) {
@@ -142,12 +155,23 @@ void semiControl() {
   while (running) {
 
     move();
-    //running = false;
 
   }
 }
 
 void fullControl() {
+
+  bool running = true;
+
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
+
+  while (running) {
+
+    move();
+
+  }
 
 }
 
