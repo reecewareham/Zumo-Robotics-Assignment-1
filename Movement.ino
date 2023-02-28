@@ -6,49 +6,9 @@
 #define ROT_INTEGRAL 0.001
 #define ROT_DIRIVATIVE 0.0
 
-#define UP_BOUND_ROT 1.0
-#define LOW_BOUND_ROT -1.0
-
 #define TRIG 2
 #define ECHO 6
 #define MAX_DISTANCE 30
-
-bool rotateAngle(float angle, int topSpeed) {
-
-  PIDController rotationPID = PIDController((float)6.5, (float) 0.001, (float)0.0);
-
-  float error, motorSpeed, targetAngle, currentHeading;
-  bool continueLoop = true;
-
-  turnSensorReset();
-  turnSensorUpdate();
-
-  currentHeading = getHeading();
-
-  targetAngle = wrapAngle(currentHeading + angle);
-
-  while(continueLoop) {
-    turnSensorUpdate();
-    error = wrapAngle(getHeading() - targetAngle);
-    motorSpeed = rotationPID.calculate(fabs(error));
-
-    continueLoop = !(inRange(fabs(error), LOW_BOUND_ROT, UP_BOUND_ROT));
-
-    if(false == continueLoop) {
-      motorSpeed = 0;
-    }
-
-    if (motorSpeed > topSpeed) {
-      motorSpeed = topSpeed;
-    }
-
-    if (error > 0) {
-      motors.setSpeeds(motorSpeed, -motorSpeed);
-    } else {
-      motors.setSpeeds(-motorSpeed, motorSpeed);
-    }
-  }
-}
 
 void moveForward() {
 
@@ -177,7 +137,6 @@ void moveForwardLineLeft() {
   motors.setSpeeds(0,0);
   delay(100);
   lineSensors.readCalibrated(lineSensorValues);
-  printReadingsToSerial();
 
   if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] <= 50)) {
       Serial1.print("Detected half wall.");  
@@ -198,8 +157,6 @@ void moveForwardLineLeft() {
         if (timedOut) {
           motors.setSpeeds(0,0);
           delay(200);
-          motors.setSpeeds(-100,-100);
-          delay(1500);
           breakLoop = true;
         }
 
@@ -220,31 +177,26 @@ void moveForwardLineLeft() {
     if (isWall) {
       Serial1.print("Found left corner. Moving around corner.");
       motors.setSpeeds(100,100);
-      delay(1500);
+      delay(2000);
       motors.setSpeeds(0,0);
       rotateAngle(90, 150);
     }
 
     if (timedOut) {
       Serial1.print("No wall detected. Must be left room.");
-      //rotateAngle(-90, 150);
-      //motors.setSpeeds(100,100);
-      //delay(1500);
-      //motors.setSpeeds(0,0);
-      //rotateAngle(90,150);
       motors.setSpeeds(100,100);
-      delay(1500);
+      delay(1200);
       motors.setSpeeds(0,0);
 
       rotateAndScan();    
 
       motors.setSpeeds(-100,-100);
-      delay(1500);
+      delay(1200);
       motors.setSpeeds(0,0);
       rotateAngle(-90,150);
       delay(100);
       motors.setSpeeds(100,100);
-      delay(1500);
+      delay(3000);
       motors.setSpeeds(0,0);
       rotateAngle(90,150);
     }
@@ -296,7 +248,6 @@ void moveForwardLineRight() {
   motors.setSpeeds(0,0);
   delay(100);
   lineSensors.readCalibrated(lineSensorValues);
-  printReadingsToSerial();
 
   if ((lineSensorValues[0] <= 50) && (lineSensorValues[4] >= 200)) {
       Serial1.print("Detected half wall.");    
@@ -317,8 +268,6 @@ void moveForwardLineRight() {
         if (timedOut) {
           motors.setSpeeds(0,0);
           delay(200);
-          motors.setSpeeds(-100,-100);
-          delay(1500);
           breakLoop = true;
         }
 
@@ -339,18 +288,299 @@ void moveForwardLineRight() {
     if (isWall) {
       Serial1.print("Found right corner. Moving around corner.");
       motors.setSpeeds(100,100);
-      delay(1500);
+      delay(2000);
       motors.setSpeeds(0,0);
       rotateAngle(-90, 150);
     }
 
     if (timedOut) {
       Serial1.print("No wall detected. Must be right room.");
-      //rotateAngle(90, 150);
-      //motors.setSpeeds(100,100);
-      //delay(1500);
-      //motors.setSpeeds(0,0);
-      //rotateAngle(-90,150);
+      motors.setSpeeds(100,100);
+      delay(1200);
+      motors.setSpeeds(0,0);
+
+      rotateAndScan();
+
+      motors.setSpeeds(-100,-100);
+      delay(1200);
+      motors.setSpeeds(0,0);
+      rotateAngle(90,150);
+      delay(100);
+      motors.setSpeeds(100,100);
+      delay(3000);
+      motors.setSpeeds(0,0);
+      rotateAngle(-90,150);
+    }
+
+    lineSensors.readCalibrated(lineSensorValues);
+    correctFinished = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
+
+    delay(100);
+
+    if(!correctFinished) {
+      forwardCorrection();
+    }
+
+  motors.setSpeeds(-100,-100);
+  delay(300);
+  motors.setSpeeds(0,0);
+  delay(50);
+}
+
+void moveForwardSemi() {
+
+  int16_t targetAngle, power, error, speedDifference, leftSpeed, rightSpeed;
+  int16_t speed = 100;
+  int16_t proportion = 12;
+  float integral = 0.5;
+  unsigned long duration = 1000;
+  unsigned long time;
+  bool lineDetected = false;
+  bool timedOut = false;
+  bool reverseNeeded = false;
+
+  turnSensorReset();
+  turnSensorUpdate();
+
+  targetAngle = getHeading();
+
+  time = millis();
+
+  Serial1.print("Moving through corridor.");
+
+  while(!timedOut) {
+
+    turnSensorUpdate();
+
+    error = wrapAngle(getHeading() - targetAngle);
+
+    speedDifference = (error * proportion) + ((int)(error * integral));
+
+    leftSpeed = speed + speedDifference;
+    rightSpeed = speed - speedDifference;
+
+    leftSpeed = constrain(leftSpeed, 0, (int16_t)speed);
+    rightSpeed = constrain(rightSpeed, 0, (int16_t)speed);
+
+    timedOut = ((millis() - time) > duration);
+
+    if (timedOut) {
+      leftSpeed = 0;
+      rightSpeed = 0;
+      lineDetected = false;
+    }
+
+    lineSensors.readCalibrated(lineSensorValues);
+    lineDetected = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
+
+    if (lineDetected) {
+      leftSpeed = 0;
+      rightSpeed = 0;
+      timedOut = true;
+      reverseNeeded = true;
+    }
+    motors.setSpeeds(leftSpeed,rightSpeed);
+  }
+
+  if (reverseNeeded) {
+    reverseCorrection();
+    Serial1.print("Hit end of corridor. Zumo needs rotating.");
+    semiAutoManualControls();
+  }
+}
+
+void moveForwardLineLeftSemi() {
+  int16_t leftSpeed = 75;
+  int16_t rightSpeed = 75;
+  bool finished = false;
+  bool correctFinished = false;
+  int16_t beginTime;
+  int16_t endTime;
+  bool isWall = false;
+  bool timedOut = false;
+
+  beginTime = millis();
+
+  Serial1.print("Checking left wall.");
+
+  while (!finished) {
+    
+    lineSensors.readCalibrated(lineSensorValues);
+    finished = ((lineSensorValues[0] >= 200) || (lineSensorValues[4] >= 200));
+
+    //endTime = ((millis() - beginTime) > 2000);
+
+    if (finished) {
+      leftSpeed = 0;
+      rightSpeed = 0;
+    }
+
+    motors.setSpeeds(leftSpeed, rightSpeed);
+  }
+
+  motors.setSpeeds(100,100);
+  delay(100);
+  motors.setSpeeds(0,0);
+  delay(100);
+  lineSensors.readCalibrated(lineSensorValues);
+
+  if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] <= 50)) {
+      Serial1.print("Detected half wall.");  
+      motors.setSpeeds(-100,-100);
+      delay(400);
+      rotateAngle(-90, 150);
+      bool breakLoop = false;
+      motors.setSpeeds(100,100);
+      int32_t time = millis();
+      int32_t timeElapsed = 0;
+      while (!breakLoop) {
+        lineSensors.readCalibrated(lineSensorValues);
+        isWall = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
+
+        timeElapsed = millis();
+        timedOut = ((timeElapsed - time) >= 2000);
+
+        if (timedOut) {
+          motors.setSpeeds(0,0);
+          delay(200);
+          breakLoop = true;
+        }
+
+        if(isWall) {
+          motors.setSpeeds(0,0);
+          delay(200);
+          motors.setSpeeds(-100,-100);
+          delay(200);
+          breakLoop = true;
+        }
+
+      }
+      motors.setSpeeds(0,0);
+    }
+
+    if (isWall) {
+      Serial1.print("Found left corner. Zumo needs rotating.");
+      semiAutoManualControls();
+      motors.setSpeeds(100,100);
+      delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(90, 150);
+    }
+
+    if (timedOut) {
+      Serial1.print("No wall detected. Must be left room. Zumo needs rotating.");
+      semiAutoManualControls();
+      motors.setSpeeds(100,100);
+      delay(1500);
+      motors.setSpeeds(0,0);
+
+      rotateAndScan();    
+
+      motors.setSpeeds(-100,-100);
+      delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(-90,150);
+      delay(100);
+      motors.setSpeeds(100,100);
+      delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(90,150);
+    }
+
+    lineSensors.readCalibrated(lineSensorValues);
+    correctFinished = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
+
+    delay(100);
+
+    if(!correctFinished) {
+      forwardCorrection();
+    }
+
+  motors.setSpeeds(-100,-100);
+  delay(300);
+  motors.setSpeeds(0,0);
+  delay(50);
+}
+
+void moveForwardLineRightSemi() {
+  int16_t leftSpeed = 75;
+  int16_t rightSpeed = 75;
+  bool finished = false;
+  bool correctFinished = false;
+  int16_t beginTime;
+  int16_t endTime;
+  bool isWall = false;
+  bool timedOut = false;
+
+  beginTime = millis();
+
+  Serial1.print("Checking right wall.");
+
+  while (!finished) {
+    
+    lineSensors.readCalibrated(lineSensorValues);
+    finished = ((lineSensorValues[0] >= 200) || (lineSensorValues[4] >= 200));
+
+    if (finished) {
+      leftSpeed = 0;
+      rightSpeed = 0;
+    }
+
+    motors.setSpeeds(leftSpeed, rightSpeed);
+  }
+
+  motors.setSpeeds(100,100);
+  delay(100);
+  motors.setSpeeds(0,0);
+  delay(100);
+  lineSensors.readCalibrated(lineSensorValues);
+
+  if ((lineSensorValues[0] <= 50) && (lineSensorValues[4] >= 200)) {
+      Serial1.print("Detected half wall.");    
+      motors.setSpeeds(-100,-100);
+      delay(400);
+      rotateAngle(90, 150);
+      bool breakLoop = false;
+      motors.setSpeeds(100,100);
+      int time = millis();
+      int timeElapsed = 0;
+      while (!breakLoop) {
+        lineSensors.readCalibrated(lineSensorValues);
+        isWall = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
+
+        timeElapsed = millis();
+        timedOut = ((timeElapsed - time) >= 2000);
+
+        if (timedOut) {
+          motors.setSpeeds(0,0);
+          delay(200);
+          breakLoop = true;
+        }
+
+        if(isWall) {
+          motors.setSpeeds(0,0);
+          delay(200);
+          motors.setSpeeds(-100,-100);
+          delay(200);
+          breakLoop = true;
+        }
+
+      }
+      motors.setSpeeds(0,0);
+    }
+
+    if (isWall) {
+      Serial1.print("Found right corner. Zumo needs rotating.");
+      semiAutoManualControls();
+      motors.setSpeeds(100,100);
+      delay(1500);
+      motors.setSpeeds(0,0);
+      rotateAngle(-90, 150);
+    }
+
+    if (timedOut) {
+      Serial1.print("No wall detected. Must be right room. Zumo needs rotating.");
+      semiAutoManualControls();
       motors.setSpeeds(100,100);
       delay(1500);
       motors.setSpeeds(0,0);
@@ -418,7 +648,6 @@ void forwardCorrection() {
     delay(50);
   }
 
-
 }
 
 void rotateAndScan() {
@@ -426,42 +655,156 @@ void rotateAndScan() {
   bool scanRight = false;
   bool scanLeft = false;
   bool objectDetected = false;
+  bool objectAlreadyFound = false;
 
   rotateAngle(90,150);
   delay(500);
 
   for (int i = 0; i < 4; i++) {
-    rotateAngle(-45,150);
-    delay(200);
     proxSensors.read();
-      if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
+    if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
+      ledRed(1);
+      delay(1000);
+      ledRed(0);
+      objectDetected = true;     
+    }
+
+    if (!objectAlreadyFound) {
+
+      if (objectDetected) {
+        motors.setSpeeds(100,100);
+        delay(400);
+        motors.setSpeeds(0,0);
+        delay(100);
         ledRed(1);
-        delay(1000);
+        buzzer.playFrequency(500,1000,12);
+        Serial1.print("Object detected in room!");
+        delay(100);
         ledRed(0);
-        objectDetected = true;      
+        delay(100);
+        motors.setSpeeds(-100,-100);
+        delay(400);
+        motors.setSpeeds(0,0);
+        objectAlreadyFound = true;
       }
+    }
+
+    objectDetected = false;
+
+    delay(200);
+    rotateAngle(-45,150);
     delay(200);
   }
 
   for (int i = 0; i < 4; i++) {
-    rotateAngle(45,150);
-    delay(200);
     proxSensors.read();
-      if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
+    if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
+      ledRed(1);
+      delay(1000);
+      ledRed(0);
+      objectDetected = true;     
+    }
+
+    if (!objectAlreadyFound) {
+
+      if (objectDetected) {
+        motors.setSpeeds(100,100);
+        delay(400);
+        motors.setSpeeds(0,0);
+        delay(100);
         ledRed(1);
-        delay(1000);
+        buzzer.playFrequency(500,1000,12);
+        Serial1.print("Object detected in room!");
+        delay(100);
         ledRed(0);
-        objectDetected = true;      
+        delay(100);
+        motors.setSpeeds(-100,-100);
+        delay(400);
+        motors.setSpeeds(0,0);
+        objectAlreadyFound = true;
       }
+    }
+
+    objectDetected = false;
+
+    delay(200);
+    rotateAngle(45,150);
     delay(200);
   }
 
   rotateAngle(-90,150);
-  if (objectDetected) {
-    Serial1.print("Object detected in room.");
-    ledGreen(0);
-    delay(1000);
-    ledGreen(1);    
-  }
   delay(200);
+}
+
+void semiAutoManualControls() {
+
+  uint16_t incomingByte = 0;
+  bool running = true;
+
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
+
+  while (running) {
+
+    if (Serial1.available() > 0) {
+
+      incomingByte = Serial1.read();
+
+      Serial1.print(incomingByte);
+    
+      if (incomingByte == 119) { //Forward Control (w)
+      
+        ledYellow(1);
+        motors.setSpeeds(leftSpeed, rightSpeed);
+        delay(100);
+        motors.setSpeeds(0, 0);
+        ledYellow(0);
+
+      } else if (incomingByte == 115) {  //Backwards Control (s)
+
+        ledYellow(1);
+        motors.setSpeeds(leftBackSpeed, rightBackSpeed);
+        delay(100);
+        motors.setSpeeds(0, 0);
+        ledYellow(0);
+
+      } else if (incomingByte == 97) {  //Left Control (a)
+
+        ledYellow(1);
+        motors.setSpeeds(leftBackSpeed, rightSpeed);
+        delay(100);
+        motors.setSpeeds(0, 0);
+        ledYellow(0);
+
+      } else if (incomingByte == 100) {  //Right Control (d)
+
+        ledYellow(1);
+        motors.setSpeeds(leftSpeed, rightBackSpeed);
+        delay(100);
+        motors.setSpeeds(0, 0);
+        ledYellow(0);
+
+      } else if (incomingByte == 32) {  //Finish (Spacebar). Notifies the zumo that the rotations have completed
+
+        ledRed(1);
+        delay(100);
+        ledRed(0);
+        running = false;
+
+      } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
+
+        rotateAngle(90, 150);
+
+      } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
+
+        rotateAngle(-90, 150);
+
+      } else if (incomingByte == 122) {
+
+        running = false;
+
+      }
+    }
+  }
 }

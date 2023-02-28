@@ -59,6 +59,10 @@ void manualControl() {
   uint16_t incomingByte = 0;
   bool running = true;
 
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
+
   while (running) {
 
     if (Serial1.available() > 0) {
@@ -66,37 +70,6 @@ void manualControl() {
       incomingByte = Serial1.read();
 
       Serial1.print(incomingByte);
-
-      if (incomingByte == 49) { //Increase speed to 100 (1) (Default Speed)
-        
-        leftSpeed = 100;
-        rightSpeed = 100;
-        leftBackSpeed = -100;
-        rightBackSpeed = -100;    
-
-      } else if (incomingByte == 50) { //Increase speed to 200 (2)
-        
-        leftSpeed = 200;
-        rightSpeed = 200;
-        leftBackSpeed = -200;
-        rightBackSpeed = -200;
-        
-      } else if (incomingByte == 51) { //Increase speed to 300 (3)
-        
-        leftSpeed = 300;
-        rightSpeed = 300;
-        leftBackSpeed = -300;
-        rightBackSpeed = -300;
-
-      } else if (incomingByte == 52) { //Increase speed to 400 (4) (Max Speed)
-        
-        leftSpeed = 400;
-        rightSpeed = 400;
-        leftBackSpeed = -400;
-        rightBackSpeed = -400;
-
-      }
-
     
       if (incomingByte == 119) { //Forward Control (w)
       
@@ -130,15 +103,53 @@ void manualControl() {
         motors.setSpeeds(0, 0);
         ledYellow(0);
 
-      } else if (incomingByte == 32) {
+      } else if (incomingByte == 32) {  //Notify (Spacebar). Makes noise to notify that there is a object in a room
+
         ledRed(1);
         buzzer.playFrequency(500,1000,12);
         delay(100);
         ledRed(0);
-      }
 
-      if (incomingByte == 122) {
+      } else if (incomingByte == 49) {  //Increase speed to 100 (1) (Default Speed)
+        
+        leftSpeed = 100;
+        rightSpeed = 100;
+        leftBackSpeed = -100;
+        rightBackSpeed = -100;    
+
+      } else if (incomingByte == 50) {  //Increase speed to 200 (2)
+        
+        leftSpeed = 200;
+        rightSpeed = 200;
+        leftBackSpeed = -200;
+        rightBackSpeed = -200;
+        
+      } else if (incomingByte == 51) {  //Increase speed to 300 (3)
+        
+        leftSpeed = 300;
+        rightSpeed = 300;
+        leftBackSpeed = -300;
+        rightBackSpeed = -300;
+
+      } else if (incomingByte == 52) {  //Increase speed to 400 (4) (Max Speed)
+        
+        leftSpeed = 400;
+        rightSpeed = 400;
+        leftBackSpeed = -400;
+        rightBackSpeed = -400;
+
+      } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
+
+        rotateAngle(90, 150);
+
+      } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
+
+        rotateAngle(-90, 150);
+
+      } else if (incomingByte == 122) {
+
         running = false;
+
       }
     }
   }
@@ -154,7 +165,7 @@ void semiControl() {
 
   while (running) {
 
-    move();
+    moveSemiAuto();
 
   }
 }
@@ -169,52 +180,13 @@ void fullControl() {
 
   while (running) {
 
-    move();
+    moveFullAuto();
 
   }
 
 }
 
-void calibrateLineSensors()
-{
-  ledYellow(1);
-
-  for(uint16_t i = 0; i < 120; i++)
-  {
-    if (i > 30 && i <= 90)
-    {
-      motors.setSpeeds(-150, 150);
-    }
-    else
-    {
-      motors.setSpeeds(150, -150);
-    }
-
-    lineSensors.calibrate();
-  }
-  motors.setSpeeds(0, 0);
-
-  ledYellow(0);
-}
-
-void printReadingsToSerial()
-{
-  static char buffer[80];
-  sprintf(buffer, "%4d %4d %4d %4d %4d\n",
-    lineSensorValues[0],
-    lineSensorValues[1],
-    lineSensorValues[2],
-    lineSensorValues[3],
-    lineSensorValues[4]
-  );
-  Serial1.print(buffer);
-}
-
-int32_t getAngle() {
-  return (((int32_t)turnAngle >> 16) *360) >> 16;
-}
-
-void move() {
+void moveFullAuto() {
 
   moveForward();
   delay(500);
@@ -227,6 +199,24 @@ void move() {
   rotateAngle(RIGHT_TURN, TOP_SPEED);
   delay(500);
   moveForwardLineRight();
+  delay(500);
+  rotateAngle(LEFT_TURN, TOP_SPEED);
+  delay(500);
+}
+
+void moveSemiAuto() {
+
+  moveForward();
+  delay(500);
+  rotateAngle(LEFT_TURN, TOP_SPEED);
+  delay(500);
+  moveForwardLineLeftSemi();
+  delay(500);
+  rotateAngle(RIGHT_TURN, TOP_SPEED);
+  delay(500);
+  rotateAngle(RIGHT_TURN, TOP_SPEED);
+  delay(500);
+  moveForwardLineRightSemi();
   delay(500);
   rotateAngle(LEFT_TURN, TOP_SPEED);
   delay(500);
