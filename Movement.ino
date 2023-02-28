@@ -162,6 +162,8 @@ void moveForwardLineLeft() {
     lineSensors.readCalibrated(lineSensorValues);
     finished = ((lineSensorValues[0] >= 200) || (lineSensorValues[4] >= 200));
 
+    //endTime = ((millis() - beginTime) > 2000);
+
     if (finished) {
       leftSpeed = 0;
       rightSpeed = 0;
@@ -180,7 +182,7 @@ void moveForwardLineLeft() {
   if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] <= 50)) {
       Serial1.print("Detected half wall.");  
       motors.setSpeeds(-100,-100);
-      delay(500);
+      delay(400);
       rotateAngle(-90, 150);
       bool breakLoop = false;
       motors.setSpeeds(100,100);
@@ -217,33 +219,34 @@ void moveForwardLineLeft() {
 
     if (isWall) {
       Serial1.print("Found left corner. Moving around corner.");
-      //motors.setSpeeds(100,100);
-      //delay(1500);
+      motors.setSpeeds(100,100);
+      delay(1500);
       motors.setSpeeds(0,0);
       rotateAngle(90, 150);
     }
 
     if (timedOut) {
       Serial1.print("No wall detected. Must be left room.");
-      rotateAngle(-90, 150);
+      //rotateAngle(-90, 150);
       //motors.setSpeeds(100,100);
       //delay(1500);
-      motors.setSpeeds(0,0);
-      rotateAngle(90,150);
+      //motors.setSpeeds(0,0);
+      //rotateAngle(90,150);
       motors.setSpeeds(100,100);
-      delay(1000);
+      delay(1500);
       motors.setSpeeds(0,0);
 
       rotateAndScan();    
 
       motors.setSpeeds(-100,-100);
-      delay(1000);
+      delay(1500);
       motors.setSpeeds(0,0);
       rotateAngle(-90,150);
       delay(100);
       motors.setSpeeds(100,100);
       delay(1500);
       motors.setSpeeds(0,0);
+      rotateAngle(90,150);
     }
 
     lineSensors.readCalibrated(lineSensorValues);
@@ -298,7 +301,7 @@ void moveForwardLineRight() {
   if ((lineSensorValues[0] <= 50) && (lineSensorValues[4] >= 200)) {
       Serial1.print("Detected half wall.");    
       motors.setSpeeds(-100,-100);
-      delay(500);
+      delay(400);
       rotateAngle(90, 150);
       bool breakLoop = false;
       motors.setSpeeds(100,100);
@@ -314,8 +317,8 @@ void moveForwardLineRight() {
         if (timedOut) {
           motors.setSpeeds(0,0);
           delay(200);
-          //motors.setSpeeds(-100,-100);
-          //delay(2000);
+          motors.setSpeeds(-100,-100);
+          delay(1500);
           breakLoop = true;
         }
 
@@ -343,11 +346,11 @@ void moveForwardLineRight() {
 
     if (timedOut) {
       Serial1.print("No wall detected. Must be right room.");
-      rotateAngle(90, 150);
+      //rotateAngle(90, 150);
       //motors.setSpeeds(100,100);
       //delay(1500);
-      motors.setSpeeds(0,0);
-      rotateAngle(-90,150);
+      //motors.setSpeeds(0,0);
+      //rotateAngle(-90,150);
       motors.setSpeeds(100,100);
       delay(1500);
       motors.setSpeeds(0,0);
@@ -355,12 +358,12 @@ void moveForwardLineRight() {
       rotateAndScan();
 
       motors.setSpeeds(-100,-100);
-      delay(1000);
+      delay(1500);
       motors.setSpeeds(0,0);
-      rotateAngle(-90,150);
+      rotateAngle(90,150);
       delay(100);
       motors.setSpeeds(100,100);
-      delay(1000);
+      delay(100);
       motors.setSpeeds(0,0);
     }
 
