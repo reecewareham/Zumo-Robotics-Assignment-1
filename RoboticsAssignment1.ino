@@ -27,6 +27,7 @@ uint16_t lineSensorValues[5] = { 0, 0, 0, 0, 0 };
 uint32_t avgCorrectionTime = 0;
 uint32_t totalCorrectionTime = 0;
 uint16_t numOfCorrections = 0;
+uint16_t incomingByte = 0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -36,27 +37,30 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  
-  if (buttonA.isPressed()) {
-    manualControl();
-  } else if (buttonB.isPressed()) {
-    delay(500);
-    calibrateLineSensors();
-    delay(2000);
-    semiControl();
-  } else if (buttonC.isPressed()) {
-    delay(500);
-    calibrateLineSensors();
-    delay(2000);
-    fullControl();
-  }
 
+  if (Serial1.available() > 0) {
+
+    incomingByte = Serial1.read();
+  
+    if ((incomingByte == 106) || (buttonA.isPressed())) {
+      manualControl();
+    } else if ((incomingByte == 107) || (buttonB.isPressed())) {
+      delay(500);
+      calibrateLineSensors();
+      delay(2000);
+      semiControl();
+    } else if ((incomingByte == 108) || (buttonC.isPressed())) {
+      delay(500);
+      calibrateLineSensors();
+      delay(2000);
+      fullControl();
+    }
+  }
 }
 
 void manualControl() {
 
-  uint16_t incomingByte = 0;
+  incomingByte = 0;
   bool running = true;
 
   turnSensorSetup();
@@ -65,14 +69,11 @@ void manualControl() {
 
   while (running) {
 
-    if (Serial1.available() > 0) {
-
       incomingByte = Serial1.read();
-
-      Serial1.print(incomingByte);
     
       if (incomingByte == 119) { //Forward Control (w)
       
+        Serial1.print("Moving forwards.");
         ledYellow(1);
         motors.setSpeeds(leftSpeed, rightSpeed);
         delay(100);
@@ -81,6 +82,7 @@ void manualControl() {
 
       } else if (incomingByte == 115) {  //Backwards Control (s)
 
+        Serial1.print("Moving backwards.");
         ledYellow(1);
         motors.setSpeeds(leftBackSpeed, rightBackSpeed);
         delay(100);
@@ -89,6 +91,7 @@ void manualControl() {
 
       } else if (incomingByte == 97) {  //Left Control (a)
 
+        Serial1.print("Turning left.");
         ledYellow(1);
         motors.setSpeeds(leftBackSpeed, rightSpeed);
         delay(100);
@@ -97,6 +100,7 @@ void manualControl() {
 
       } else if (incomingByte == 100) {  //Right Control (d)
 
+        Serial1.print("Turning right.");        
         ledYellow(1);
         motors.setSpeeds(leftSpeed, rightBackSpeed);
         delay(100);
@@ -105,6 +109,7 @@ void manualControl() {
 
       } else if (incomingByte == 32) {  //Notify (Spacebar). Makes noise to notify that there is a object in a room
 
+        Serial1.print("Found object.");
         ledRed(1);
         buzzer.playFrequency(500,1000,12);
         delay(100);
@@ -112,6 +117,7 @@ void manualControl() {
 
       } else if (incomingByte == 49) {  //Increase speed to 100 (1) (Default Speed)
         
+        Serial1.print("Speed set to 100.");
         leftSpeed = 100;
         rightSpeed = 100;
         leftBackSpeed = -100;
@@ -119,6 +125,7 @@ void manualControl() {
 
       } else if (incomingByte == 50) {  //Increase speed to 200 (2)
         
+        Serial1.print("Speed set to 200.");
         leftSpeed = 200;
         rightSpeed = 200;
         leftBackSpeed = -200;
@@ -126,6 +133,7 @@ void manualControl() {
         
       } else if (incomingByte == 51) {  //Increase speed to 300 (3)
         
+        Serial1.print("Speed set to 300.");
         leftSpeed = 300;
         rightSpeed = 300;
         leftBackSpeed = -300;
@@ -133,6 +141,7 @@ void manualControl() {
 
       } else if (incomingByte == 52) {  //Increase speed to 400 (4) (Max Speed)
         
+        Serial1.print("Speed set to 400.");
         leftSpeed = 400;
         rightSpeed = 400;
         leftBackSpeed = -400;
@@ -140,19 +149,20 @@ void manualControl() {
 
       } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
 
+        Serial1.print("Rotating 90 degrees left.");
         rotateAngle(90, 150);
 
       } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
 
+        Serial1.print("Rotating 90 degrees right.");
         rotateAngle(-90, 150);
 
-      } else if (incomingByte == 122) {
+      } else if (incomingByte == 122) {  //Disconnects zumo from GUI (z)
 
         running = false;
 
       }
     }
-  }
 }
 
 void semiControl() {
@@ -167,6 +177,14 @@ void semiControl() {
 
     moveSemiAuto();
 
+    incomingByte = Serial1.read();
+
+    if (incomingByte == 122) {  //Disconnects zumo from GUI (z)
+
+      running = false;
+
+    }
+
   }
 }
 
@@ -178,9 +196,17 @@ void fullControl() {
   delay(500);
   turnSensorReset();
 
-  while (running) {
+  while (running) {    
 
-    moveFullAuto();
+    fullControlNew();
+
+    incomingByte = Serial1.read();
+
+    if (incomingByte == 122) {  //Disconnects zumo from GUI (z)
+
+      running = false;
+
+    }
 
   }
 
@@ -206,18 +232,5 @@ void moveFullAuto() {
 
 void moveSemiAuto() {
 
-  moveForward();
-  delay(500);
-  rotateAngle(LEFT_TURN, TOP_SPEED);
-  delay(500);
-  moveForwardLineLeftSemi();
-  delay(500);
-  rotateAngle(RIGHT_TURN, TOP_SPEED);
-  delay(500);
-  rotateAngle(RIGHT_TURN, TOP_SPEED);
-  delay(500);
-  moveForwardLineRightSemi();
-  delay(500);
-  rotateAngle(LEFT_TURN, TOP_SPEED);
-  delay(500);
+  
 }
