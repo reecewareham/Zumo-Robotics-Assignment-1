@@ -85,7 +85,8 @@ int32_t getAngle() {
 //////////////////////////////////////////////////////////////////////////////////
 /*
   Puts the readings from the line sensors into a buffer which is then formatted
-  properly using the sprintf function. This is then printed in Serial1.
+  properly using the sprintf function. This is then printed in Serial1. This is
+  used for debugging.
 */
 //////////////////////////////////////////////////////////////////////////////////
 

@@ -1,396 +1,9 @@
 #include <Zumo32U4.h>
-#include "src/TurnSensor/TurnSensor.h"
-#include "src/PIDController/PIDController.h"
-
-#define ROT_PROPOTION 6.5
-#define ROT_INTEGRAL 0.001
-#define ROT_DIRIVATIVE 0.0
-
-#define TRIG 2
-#define ECHO 6
-#define MAX_DISTANCE 30
 
 int16_t minBlackLine = 250;
 int16_t maxBlackLine = 600;
 
 /* Old Method Code
-
-void moveForward() {
-
-  int16_t targetAngle, power, error, speedDifference, leftSpeed, rightSpeed;
-  int16_t speed = 75;
-  int16_t proportion = 12;
-  float integral = 0.5;
-  unsigned long duration = 800;
-  unsigned long time;
-  bool lineDetected = false;
-  bool timedOut = false;
-  bool reverseNeeded = false;
-
-  turnSensorReset();
-  turnSensorUpdate();
-
-  targetAngle = getHeading();
-
-  time = millis();
-
-  Serial1.print("Moving through corridor.");
-
-  while(!timedOut) {
-
-    turnSensorUpdate();
-
-    error = wrapAngle(getHeading() - targetAngle);
-
-    speedDifference = (error * proportion) + ((int)(error * integral));
-
-    leftSpeed = speed + speedDifference;
-    rightSpeed = speed - speedDifference;
-
-    leftSpeed = constrain(leftSpeed, 0, (int16_t)speed);
-    rightSpeed = constrain(rightSpeed, 0, (int16_t)speed);
-
-    timedOut = ((millis() - time) > duration);
-
-    if (timedOut) {
-      leftSpeed = 0;
-      rightSpeed = 0;
-      lineDetected = false;
-    }
-
-    lineSensors.readCalibrated(lineSensorValues);
-    lineDetected = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
-
-    if (lineDetected) {
-      leftSpeed = 0;
-      rightSpeed = 0;
-      timedOut = true;
-      reverseNeeded = true;
-    }
-    motors.setSpeeds(leftSpeed,rightSpeed);
-  }
-
-  if (reverseNeeded) {
-    reverseCorrection();
-    rotateAngle(-90,150);
-    rotateAngle(-90,150);
-  }
-}
-
-void reverseCorrection() {
-  bool finished = false;
-  int leftSpeed = -50;
-  int rightSpeed = -50;
-
-  while (!finished) {
-    lineSensors.readCalibrated(lineSensorValues);
-
-    if ((lineSensorValues[0] < 200) && (lineSensorValues[4] < 200)) {
-      leftSpeed = 0;
-      rightSpeed = 0;
-      finished = true;
-    } else if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] < 200)) {
-      leftSpeed = -80;
-      rightSpeed = 0;
-    } else if ((lineSensorValues[0] < 200) && (lineSensorValues[4] >= 200)) {
-      leftSpeed = 0;
-      rightSpeed = -80;
-    } else {
-      leftSpeed = -50;
-      rightSpeed = -50;
-    }
-    motors.setSpeeds(leftSpeed, rightSpeed);
-  }
-
-  delay(150);
-  motors.setSpeeds(-50,-50);
-  delay(100);
-  motors.setSpeeds(0,0);
-}
-
-void moveForwardLineLeft() {
-  int16_t leftSpeed = 50;
-  int16_t rightSpeed = 50;
-  bool finished = false;
-  bool correctFinished = false;
-  int16_t beginTime;
-  int16_t endTime;
-  bool isWall = false;
-  bool timedOut = false;
-
-  beginTime = millis();
-
-  Serial1.print("Checking left wall.");
-
-  while (!finished) {
-    
-    lineSensors.readCalibrated(lineSensorValues);
-    finished = ((lineSensorValues[0] >= 200) || (lineSensorValues[4] >= 200));
-
-    //endTime = ((millis() - beginTime) > 2000);
-
-    if (finished) {
-      leftSpeed = 0;
-      rightSpeed = 0;
-    }
-
-    motors.setSpeeds(leftSpeed, rightSpeed);
-  }
-
-  motors.setSpeeds(50,50);
-  delay(100);
-  motors.setSpeeds(0,0);
-  delay(100);
-  lineSensors.readCalibrated(lineSensorValues);
-
-  if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] <= 50)) {
-      Serial1.print("Detected half wall.");  
-      motors.setSpeeds(-50,-50);
-      delay(400);
-      rotateAngle(-90, 150);
-      bool breakLoop = false;
-      motors.setSpeeds(65,65);
-      int time = millis();
-      int timeElapsed = 0;
-      while (!breakLoop) {
-        lineSensors.readCalibrated(lineSensorValues);
-        isWall = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
-
-        timeElapsed = millis();
-        timedOut = ((timeElapsed - time) >= 2000);
-
-        if (timedOut) {
-          motors.setSpeeds(0,0);
-          delay(200);
-          breakLoop = true;
-          numberOfCountsLeft++;
-        }
-
-        if(isWall) {
-          motors.setSpeeds(0,0);
-          delay(200);
-          motors.setSpeeds(-50,-50);
-          delay(200);
-          breakLoop = true;
-          numberOfCountsLeft++;
-        }
-
-      }
-      motors.setSpeeds(0,0);
-      rotateAngle(90,150);
-
-    }
-
-    if (numberOfCountsLeft = 3) {
-      rotateAngle(-90,150);
-      motors.setSpeeds(75,75);
-      delay(1000);
-      motors.setSpeeds(0,0);
-
-    } else {
-
-    if (isWall) {
-      Serial1.print("Found left corner. Moving around corner.");
-      motors.setSpeeds(50,50);
-      delay(2000);
-      motors.setSpeeds(0,0);
-      rotateAngle(90, 150);
-    }
-
-    if (timedOut) {
-      Serial1.print("No wall detected. Must be left room.");
-      motors.setSpeeds(65,65);
-      delay(1600);
-      motors.setSpeeds(0,0);
-
-      rotateAndScan();    
-
-      motors.setSpeeds(-65,-65);
-      delay(1100);
-      motors.setSpeeds(0,0);
-      rotateAngle(-90,150);
-      delay(100);
-      motors.setSpeeds(75,75);
-      delay(2500);
-      motors.setSpeeds(0,0);
-      rotateAngle(90,150);
-    }
-    }
-
-    lineSensors.readCalibrated(lineSensorValues);
-    correctFinished = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
-
-    delay(100);
-
-    if(!correctFinished) {
-      forwardCorrection();
-    }
-
-  motors.setSpeeds(-50,-50);
-  delay(300);
-  motors.setSpeeds(0,0);
-  delay(50);
-}
-
-void moveForwardLineRight() {
-  int16_t leftSpeed = 50;
-  int16_t rightSpeed = 50;
-  bool finished = false;
-  bool correctFinished = false;
-  int16_t beginTime;
-  int16_t endTime;
-  bool isWall = false;
-  bool timedOut = false;
-
-  beginTime = millis();
-
-  Serial1.print("Checking right wall.");
-
-  while (!finished) {
-    
-    lineSensors.readCalibrated(lineSensorValues);
-    finished = ((lineSensorValues[0] >= 200) || (lineSensorValues[4] >= 200));
-
-    if (finished) {
-      leftSpeed = 0;
-      rightSpeed = 0;
-    }
-
-    motors.setSpeeds(leftSpeed, rightSpeed);
-  }
-
-  motors.setSpeeds(50,50);
-  delay(100);
-  motors.setSpeeds(0,0);
-  delay(100);
-  lineSensors.readCalibrated(lineSensorValues);
-
-  if ((lineSensorValues[0] <= 50) && (lineSensorValues[4] >= 200)) {
-      Serial1.print("Detected half wall.");    
-      motors.setSpeeds(-50,-50);
-      delay(400);
-      rotateAngle(90, 150);
-      bool breakLoop = false;
-      motors.setSpeeds(75,75);
-      int time = millis();
-      int timeElapsed = 0;
-      while (!breakLoop) {
-        lineSensors.readCalibrated(lineSensorValues);
-        isWall = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
-
-        timeElapsed = millis();
-        timedOut = ((timeElapsed - time) >= 2000);
-
-        if (timedOut) {
-          motors.setSpeeds(0,0);
-          delay(200);
-          breakLoop = true;
-          numberOfCountsRight++;
-        }
-
-        if(isWall) {
-          motors.setSpeeds(0,0);
-          delay(200);
-          motors.setSpeeds(-50,-50);
-          delay(200);
-          breakLoop = true;
-          numberOfCountsRight++;
-        }
-
-      }
-      motors.setSpeeds(0,0);
-      rotateAngle(-90,150);
-
-    }
-
-    if (numberOfCountsRight = 3) {
-      rotateAngle(90,150);
-      motors.setSpeeds(75,75);
-      delay(1000);
-      motors.setSpeeds(0,0);
-
-    } else {
-
-    if (isWall) {
-      Serial1.print("Found right corner. Moving around corner.");
-      motors.setSpeeds(50,50);
-      delay(2000);
-      motors.setSpeeds(0,0);
-      rotateAngle(-90, 150);
-    }
-
-    if (timedOut) {
-      Serial1.print("No wall detected. Must be right room.");
-      motors.setSpeeds(50,50);
-      delay(1500);
-      motors.setSpeeds(0,0);
-
-      rotateAndScan();
-
-      motors.setSpeeds(-50,-50);
-      delay(1200);
-      motors.setSpeeds(0,0);
-      rotateAngle(90,150);
-      delay(100);
-      motors.setSpeeds(75,75);
-      delay(3000);
-      motors.setSpeeds(0,0);
-      rotateAngle(-90,150);
-    }
-    }
-
-    lineSensors.readCalibrated(lineSensorValues);
-    correctFinished = ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200));
-
-    delay(100);
-
-    if(!correctFinished) {
-      forwardCorrection();
-    }
-
-  motors.setSpeeds(-50,-50);
-  delay(300);
-  motors.setSpeeds(0,0);
-  delay(50);
-}
-
-void forwardCorrection() {
-  bool finished = false;
-  int16_t leftSpeed = 50;
-  int16_t rightSpeed = 50;
-  uint32_t correctTime = 0;
-  uint16_t differenceTime = 0;
-
-  correctTime = millis();
-
-  while (!finished) {
-    lineSensors.readCalibrated(lineSensorValues);
-
-    if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] >= 200)) {
-      differenceTime = millis() - correctTime;
-
-      totalCorrectionTime += differenceTime;
-      numOfCorrections++;
-      avgCorrectionTime = totalCorrectionTime / numOfCorrections;
-      leftSpeed = 0;
-      rightSpeed = 0;
-      finished = true;
-    } else if ((lineSensorValues[0] >= 200) && (lineSensorValues[4] < 200)) {
-      leftSpeed = 0;
-      rightSpeed = 100;
-    } else if ((lineSensorValues[0] < 200) && (lineSensorValues[4] >= 200)) {
-      leftSpeed = 100;
-      rightSpeed = 0;
-    } else {
-      leftSpeed = 70;
-      rightSpeed = 70;
-    }
-
-    motors.setSpeeds(leftSpeed, rightSpeed);
-    delay(50);
-  }
-
-}
 
 void rotateAndScan() {
   Serial1.print("Scanning room for objects.");
@@ -479,6 +92,14 @@ void rotateAndScan() {
 }
 
 */
+
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Manual function. This function works by getting an incoming byte from
+  Serial1 which will correspond to a specific action. This is then ran through
+  lots of if statements to determine which action is needed.
+*/
+//////////////////////////////////////////////////////////////////////////////////
 
 void manual() {
 
@@ -571,7 +192,7 @@ void manual() {
       Serial1.print("Rotating 90 degrees right.");
       rotateAngle(RIGHT_TURN, TOP_SPEED);
 
-    } else if (incomingByte == 122) {  //Disconnects zumo from GUI and exit manual mode (z)
+    } else if (incomingByte == 122) {  //Disconnects Zumo from GUI and exit manual mode (z)
 
       running = false;
 
@@ -580,6 +201,16 @@ void manual() {
   }
 
 }
+
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Semi auto function. This function works by telling the Zumo to follow
+  the left line all the way around the course. If the Zumo hits a right corner,
+  it will return to manual mode which notifies the operator to make a right turn.
+  Once this action has been performed, it will return back to following the left
+  wall.
+*/
+//////////////////////////////////////////////////////////////////////////////////
 
 void semiAuto() {
 
@@ -618,6 +249,15 @@ void semiAuto() {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Semi auto manual controls function. This function works by getting an incoming 
+  byte from Serial1 which will correspond to a specific action. This is then ran 
+  through some if statements to determine which action is needed. This is used in
+  the semi auto function when it returns to manual mode when performing right turns.
+*/
+//////////////////////////////////////////////////////////////////////////////////
+
 bool semiAutoManualControls(bool exitMode) {
 
   bool running = true;
@@ -626,7 +266,7 @@ bool semiAutoManualControls(bool exitMode) {
 
     incomingByte = Serial1.read();
 
-    if (incomingByte == 32) {  //Finish (Spacebar). Notifies the zumo that the rotations have completed
+    if (incomingByte == 32) {  //Finish (Spacebar). Notifies the Zumo that the rotations have completed
 
       Serial1.print("Finished movements.");
       ledRed(1);
@@ -652,6 +292,15 @@ bool semiAutoManualControls(bool exitMode) {
     }
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Full auto function. This function works by telling the Zumo to follow
+  the left line all the way around the course. If the Zumo hits a right corner,
+  it will automatically make a 90 degree turn right where it will then continue
+  to go around the course.
+*/
+//////////////////////////////////////////////////////////////////////////////////
 
 void fullAuto() {
   bool running = true;

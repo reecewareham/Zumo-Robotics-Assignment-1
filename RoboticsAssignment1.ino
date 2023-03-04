@@ -18,15 +18,31 @@ Zumo32U4LCD lcd;
 #define TOP_SPEED 150
 
 uint16_t lineSensorValues[5] = { 0, 0, 0, 0, 0 };
-
 uint16_t incomingByte = 0;
 
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Setup. Creates a connection on Serial1. Enable the five line sensors on the Zumo
+  and the two front proximity sensors on the Zumo.
+*/
+//////////////////////////////////////////////////////////////////////////////////
+
 void setup() {
-  // put your setup code here, to run once:
+
   Serial1.begin(9600);
   lineSensors.initFiveSensors();
   proxSensors.initFrontSensor();
+
 }
+
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Loop. Checks to see if Serial1 is available. If it is available, it will read
+  incoming bytes. It will then check to see if the byte corresponds to the three
+  actions that are available. If they match, it will run that statement. This
+  decides which mode the Zumo will be put into.
+*/
+//////////////////////////////////////////////////////////////////////////////////
 
 void loop() {
 
@@ -51,6 +67,13 @@ void loop() {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Manual control function. This function works by setting up the gyro and calling
+  the manual function which will put the Zumo into manual mode.
+*/
+//////////////////////////////////////////////////////////////////////////////////
+
 void manualControl() {
 
   turnSensorSetup();
@@ -61,6 +84,13 @@ void manualControl() {
 
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Semi auto control function. This function works by setting up the gyro and calling
+  the semi auto function which will put the Zumo into semi auto mode.
+*/
+//////////////////////////////////////////////////////////////////////////////////
+
 void semiControl() {
 
   turnSensorSetup();
@@ -70,6 +100,13 @@ void semiControl() {
   semiAuto();
 
 }
+
+//////////////////////////////////////////////////////////////////////////////////
+/*
+  Full auto control function. This function works by setting up the gyro and calling
+  the full auto function which will put the Zumo into full auto mode.
+*/
+//////////////////////////////////////////////////////////////////////////////////
 
 void fullControl() {
 
