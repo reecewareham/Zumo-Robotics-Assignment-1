@@ -10,8 +10,10 @@
 #define ECHO 6
 #define MAX_DISTANCE 30
 
-int16_t numberOfCountsLeft = 0;
-int16_t numberOfCountsRight = 0;
+int16_t minBlackLine = 250;
+int16_t maxBlackLine = 600;
+
+/* Old Method Code
 
 void moveForward() {
 
@@ -476,89 +478,186 @@ void rotateAndScan() {
   delay(200);
 }
 
-void semiAutoManualControls() {
+*/
 
-  incomingByte = 0;
+void manual() {
+
   bool running = true;
 
-  turnSensorSetup();
-  delay(500);
-  turnSensorReset();
+  uint16_t leftSpeed = 100;
+  uint16_t rightSpeed = 100;
+  uint16_t leftBackSpeed = -100;
+  uint16_t rightBackSpeed = -100;
 
   while (running) {
 
-    if (Serial1.available() > 0) {
-
-      incomingByte = Serial1.read();
-
-      if (incomingByte == 119) { //Forward Control (w)
+    incomingByte = Serial1.read();
+    
+    if (incomingByte == 119) { //Forward Control (w)
       
-        Serial1.print("Moving forwards.");
-        ledYellow(1);
-        motors.setSpeeds(leftSpeed, rightSpeed);
-        delay(100);
-        motors.setSpeeds(0, 0);
-        ledYellow(0);
+      Serial1.print("Moving forwards.");
+      ledYellow(1);
+      motors.setSpeeds(leftSpeed, rightSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
 
-      } else if (incomingByte == 115) {  //Backwards Control (s)
+    } else if (incomingByte == 115) {  //Backwards Control (s)
 
-        Serial1.print("Moving backwards.");
-        ledYellow(1);
-        motors.setSpeeds(leftBackSpeed, rightBackSpeed);
-        delay(100);
-        motors.setSpeeds(0, 0);
-        ledYellow(0);
+      Serial1.print("Moving backwards.");
+      ledYellow(1);
+      motors.setSpeeds(leftBackSpeed, rightBackSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
 
-      } else if (incomingByte == 97) {  //Left Control (a)
+    } else if (incomingByte == 97) {  //Left Control (a)
 
-        Serial1.print("Turning left.");
-        ledYellow(1);
-        motors.setSpeeds(leftBackSpeed, rightSpeed);
-        delay(100);
-        motors.setSpeeds(0, 0);
-        ledYellow(0);
+      Serial1.print("Turning left.");
+      ledYellow(1);
+      motors.setSpeeds(leftBackSpeed, rightSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
 
-      } else if (incomingByte == 100) {  //Right Control (d)
+    } else if (incomingByte == 100) {  //Right Control (d)
 
-        Serial1.print("Turning right.");
-        ledYellow(1);
-        motors.setSpeeds(leftSpeed, rightBackSpeed);
-        delay(100);
-        motors.setSpeeds(0, 0);
-        ledYellow(0);
+      Serial1.print("Turning right.");        
+      ledYellow(1);
+      motors.setSpeeds(leftSpeed, rightBackSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
 
-      } else if (incomingByte == 32) {  //Finish (Spacebar). Notifies the zumo that the rotations have completed
+    } else if (incomingByte == 32) {  //Notify (Spacebar). Makes noise to notify that there is a object in a room
 
-        Serial1.print("Finished movements.");
-        ledRed(1);
-        delay(100);
-        ledRed(0);
-        running = false;
+      Serial1.print("Found object.");
+      ledRed(1);
+      buzzer.playFrequency(500,1000,12);
+      delay(200);
+      ledRed(0);
 
-      } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
+    } else if (incomingByte == 49) {  //Increase speed to 100 (1) (Default Speed)
+        
+      Serial1.print("Speed set to 100.");
+      leftSpeed, rightSpeed = 100;
+      leftBackSpeed, rightBackSpeed = -100;  
 
-        Serial1.print("Rotating 90 degrees left.");
-        rotateAngle(90, 150);
+    } else if (incomingByte == 50) {  //Increase speed to 200 (2)
+        
+      Serial1.print("Speed set to 200.");
+      leftSpeed, rightSpeed = 200;
+      leftBackSpeed, rightBackSpeed = -200; 
+        
+    } else if (incomingByte == 51) {  //Increase speed to 300 (3)
+        
+      Serial1.print("Speed set to 300.");
+      leftSpeed, rightSpeed = 300;
+      leftBackSpeed, rightBackSpeed = -300; 
 
-      } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
+    } else if (incomingByte == 52) {  //Increase speed to 400 (4) (Max Speed)
+        
+      Serial1.print("Speed set to 400.");
+      leftSpeed, rightSpeed = 400;
+      leftBackSpeed, rightBackSpeed = -400; 
 
-        Serial1.print("Rotating 90 degrees right.");
-        rotateAngle(-90, 150);
+    } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
 
-      } else if (incomingByte == 122) {
+      Serial1.print("Rotating 90 degrees left.");
+      rotateAngle(LEFT_TURN, TOP_SPEED);
 
-        running = false;
+    } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
 
-      }
+      Serial1.print("Rotating 90 degrees right.");
+      rotateAngle(RIGHT_TURN, TOP_SPEED);
+
+    } else if (incomingByte == 122) {  //Disconnects zumo from GUI and exit manual mode (z)
+
+      running = false;
+
+    }
+
+  }
+
+}
+
+void semiAuto() {
+
+  bool running = true;
+  bool exitMode = false;
+
+  while (running) {
+
+    if (exitMode) {
+
+      running = false;
+
+    }
+
+    lineSensors.read(lineSensorValues);
+    
+    if (lineSensorValues[2] > maxBlackLine || lineSensorValues[4] > maxBlackLine) {  //If front and right sensors detect a black line, we have hit a right corner so return to manual control so the operator can turn 90 degrees.
+      motors.setSpeeds(-100,-100);
+      delay(200);
+      motors.setSpeeds(0,0);
+      Serial1.print("Reached right corner, returning to manual control.");
+      semiAutoManualControls(exitMode);
+      delay(200);
+    } else if (lineSensorValues[0] < maxBlackLine && lineSensorValues[0] > minBlackLine) {  //If left sensor is within the minimum black line and maximum black line, continuing going forward.
+      motors.setSpeeds(100,100);
+    } else if (lineSensorValues[0] > maxBlackLine) {  //If left sensor is greater than the maximum black line, then set right motor to reverse to align zumo back into the assigned range.
+      motors.setSpeeds(100,-100);
+    } else if (lineSensorValues[0] < minBlackLine) {  //If left sensor is smaller than the minimum black line, then set left motor to reverse to align zumo back into the assigned range.
+      motors.setSpeeds(100,100);
+      delay(25);
+      motors.setSpeeds(-100,100);
+      delay(75);
+    } 
+
+  }
+
+}
+
+bool semiAutoManualControls(bool exitMode) {
+
+  bool running = true;
+
+  while (running) {
+
+    incomingByte = Serial1.read();
+
+    if (incomingByte == 32) {  //Finish (Spacebar). Notifies the zumo that the rotations have completed
+
+      Serial1.print("Finished movements.");
+      ledRed(1);
+      delay(100);
+      ledRed(0);
+      running = false;
+
+    } else if (incomingByte == 113) {  //Rotate -90 degrees (Left) (q)
+
+      Serial1.print("Rotating 90 degrees left.");
+      rotateAngle(90, 150);
+
+    } else if (incomingByte == 101) {  //Rotate 90 degrees (Right) (e)
+
+      Serial1.print("Rotating 90 degrees right.");
+      rotateAngle(-90, 150);
+
+    } else if (incomingByte == 122) {  //Exits mode and exits GUI (z)
+
+      running = false;
+      return exitMode = true;
+
     }
   }
 }
 
-void fullControlNew() {
+void fullAuto() {
   bool running = true;
 
   while (running) {
-    motors.setSpeeds(75,75);
+    /*motors.setSpeeds(75,75);
     lineSensors.readCalibrated(lineSensorValues);
     if (lineSensorValues[0] > 500) {
       motors.setSpeeds(75,50);
@@ -586,12 +685,40 @@ void fullControlNew() {
       delay(100);
       motors.setSpeeds(75,75);
     }
-    /*if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
+    if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
       ledRed(1);
       buzzer.playFrequency(500,1000,12);
       Serial1.print("Object detected in room!");
       delay(200);
       ledRed(0);
     }*/
+
+    incomingByte = Serial1.read();
+
+    if (incomingByte == 122) {  //Disconnects zumo from GUI (z)
+
+      running = false;
+
+    }
+
+    lineSensors.read(lineSensorValues);
+    
+    if (lineSensorValues[2] > maxBlackLine || lineSensorValues[4] > maxBlackLine) {  //If front and right sensors detect a black line, we have hit a right corner so make a 90 degree turn.
+      motors.setSpeeds(-100,-100);
+      delay(200);
+      rotateAngle(-90,150);
+      delay(200);
+    } else if (lineSensorValues[0] < maxBlackLine && lineSensorValues[0] > minBlackLine) {  //If left sensor is within the minimum black line and maximum black line, continuing going forward.
+      motors.setSpeeds(100,100);
+    } else if (lineSensorValues[0] > maxBlackLine) {  //If left sensor is greater than the maximum black line, then set right motor to reverse to align zumo back into the assigned range.
+      motors.setSpeeds(100,-100);
+    } else if (lineSensorValues[0] < minBlackLine) {  //If left sensor is smaller than the minimum black line, then set left motor to reverse to align zumo back into the assigned range.
+      motors.setSpeeds(100,100);
+      delay(25);
+      motors.setSpeeds(-100,100);
+      delay(75);
+    } 
+  
   }
+
 }
