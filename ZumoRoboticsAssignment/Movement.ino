@@ -3,6 +3,11 @@
 int16_t minBlackLine = 250;
 int16_t maxBlackLine = 600;
 
+int16_t leftSpeed = 100;
+int16_t rightSpeed = 100;
+int16_t leftBackSpeed = -100;
+int16_t rightBackSpeed = -100;
+
 //////////////////////////////////////////////////////////////////////////////////
 /*
   Manual function. This function works by getting an incoming byte from
@@ -14,11 +19,6 @@ int16_t maxBlackLine = 600;
 void manual() {
 
   bool running = true;
-
-  uint16_t leftSpeed = 100;
-  uint16_t rightSpeed = 100;
-  uint16_t leftBackSpeed = -100;
-  uint16_t rightBackSpeed = -100;
 
   while (running) {
 
@@ -62,7 +62,7 @@ void manual() {
 
     } else if (incomingByte == 32) {  //Notify (Spacebar). Makes noise to notify that there is a object in a room
 
-      Serial1.print("Found object.");
+      Serial1.print("Found person.");
       ledRed(1);
       buzzer.playFrequency(500,1000,12);
       delay(200);
@@ -145,6 +145,14 @@ void semiAuto() {
 
     }
 
+    incomingByte = Serial1.read();
+
+    if (incomingByte == 122) {  //Exits mode and exits GUI (z)
+
+      running = false;
+
+    }
+
     lineSensors.read(lineSensorValues);
     
     if (lineSensorValues[2] > maxBlackLine || lineSensorValues[4] > maxBlackLine) {  //If front and right sensors detect a black line, we have hit a right corner so return to manual control so the operator can turn 90 degrees.
@@ -220,6 +228,74 @@ bool semiAutoManualControls(bool exitMode) {
       running = false;
       return exitMode = true;
 
+    } else if (incomingByte == 119) { //Forward Control (w)
+      
+      Serial1.print("Moving forwards.");
+      ledYellow(1);
+      motors.setSpeeds(leftSpeed, rightSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
+
+    } else if (incomingByte == 115) {  //Backwards Control (s)
+
+      Serial1.print("Moving backwards.");
+      ledYellow(1);
+      motors.setSpeeds(leftBackSpeed, rightBackSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
+
+    } else if (incomingByte == 97) {  //Left Control (a)
+
+      Serial1.print("Turning left.");
+      ledYellow(1);
+      motors.setSpeeds(leftBackSpeed, rightSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
+
+    } else if (incomingByte == 100) {  //Right Control (d)
+
+      Serial1.print("Turning right.");        
+      ledYellow(1);
+      motors.setSpeeds(leftSpeed, rightBackSpeed);
+      delay(200);
+      motors.setSpeeds(0, 0);
+      ledYellow(0);
+
+    } else if (incomingByte == 49) {  //Increase speed to 100 (1) (Default Speed)
+        
+      Serial1.print("Speed set to 100.");
+      leftSpeed = 100;
+      rightSpeed = 100;
+      leftBackSpeed = -100;
+      rightBackSpeed = -100;   
+
+    } else if (incomingByte == 50) {  //Increase speed to 200 (2)
+        
+      Serial1.print("Speed set to 200.");
+      leftSpeed = 200;
+      rightSpeed = 200;
+      leftBackSpeed = -200;
+      rightBackSpeed = -200;   
+        
+    } else if (incomingByte == 51) {  //Increase speed to 300 (3)
+        
+      Serial1.print("Speed set to 300.");
+      leftSpeed = 300;
+      rightSpeed = 300;
+      leftBackSpeed = -300;
+      rightBackSpeed = -300;   
+
+    } else if (incomingByte == 52) {  //Increase speed to 400 (4) (Max Speed)
+        
+      Serial1.print("Speed set to 400.");
+      leftSpeed = 400;
+      rightSpeed = 400;
+      leftBackSpeed = -400;
+      rightBackSpeed = -400;   
+
     }
 
   }
@@ -242,14 +318,6 @@ void fullAuto() {
   Serial1.print("Moving forwards.");
 
   while (running) {
-    /*
-    if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
-      ledRed(1);
-      buzzer.playFrequency(500,1000,12);
-      Serial1.print("Object detected in room!");
-      delay(200);
-      ledRed(0);
-    }*/
 
     incomingByte = Serial1.read();
 
@@ -309,7 +377,7 @@ void proximityScan() {
 
       ledRed(1);
       buzzer.playFrequency(500,1000,12);
-      Serial1.print("Object detected in room!");
+      Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
       rotateAngle(-45, TOP_SPEED);
@@ -321,7 +389,7 @@ void proximityScan() {
 
       ledRed(1);
       buzzer.playFrequency(500,1000,12);
-      Serial1.print("Object detected in room!");
+      Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
       rotateAngle(-45, TOP_SPEED);
@@ -333,7 +401,7 @@ void proximityScan() {
 
       ledRed(1);
       buzzer.playFrequency(500,1000,12);
-      Serial1.print("Object detected in room!");
+      Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
       rotateAngle(-45, TOP_SPEED);
