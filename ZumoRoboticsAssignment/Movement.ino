@@ -383,7 +383,7 @@ void proximityScan() {
     if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
 
       ledRed(1);
-      //buzzer.playFrequency(500,1000,12);
+      buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
@@ -395,7 +395,7 @@ void proximityScan() {
     } else if ((proxSensors.countsLeftWithLeftLeds() >= 5) || (proxSensors.countsLeftWithRightLeds() >= 5)) {
 
       ledRed(1);
-      //buzzer.playFrequency(500,1000,12);
+      buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
@@ -407,7 +407,7 @@ void proximityScan() {
     } else if ((proxSensors.countsRightWithLeftLeds() >= 5) || (proxSensors.countsRightWithRightLeds() >= 5)) {
 
       ledRed(1);
-      //buzzer.playFrequency(500,1000,12);
+      buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
