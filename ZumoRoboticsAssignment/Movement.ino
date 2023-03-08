@@ -118,6 +118,8 @@ void manual() {
 
   }
 
+  motors.setSpeeds(0,0);
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -185,6 +187,9 @@ void semiAuto() {
     proximityScan();
 
   }
+
+  motors.setSpeeds(0,0);
+
 
 }
 
@@ -359,6 +364,8 @@ void fullAuto() {
 
   }
 
+  motors.setSpeeds(0,0);
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -376,38 +383,38 @@ void proximityScan() {
     if (((proxSensors.countsFrontWithLeftLeds()) >= 6) || (proxSensors.countsFrontWithRightLeds() >= 6)) {
 
       ledRed(1);
-      buzzer.playFrequency(500,1000,12);
+      //buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
       rotateAngle(-45, TOP_SPEED);
       delay(200);
       motors.setSpeeds(100,100);
-      delay(500);
+      delay(200);
 
-    } else if ((proxSensors.countsLeftWithLeftLeds() >= 6) || (proxSensors.countsLeftWithRightLeds() >= 6)) {
+    } else if ((proxSensors.countsLeftWithLeftLeds() >= 5) || (proxSensors.countsLeftWithRightLeds() >= 5)) {
 
       ledRed(1);
-      buzzer.playFrequency(500,1000,12);
+      //buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
       rotateAngle(-45, TOP_SPEED);
       delay(200);
       motors.setSpeeds(100,100);
-      delay(500);
+      delay(400);
 
-    } else if ((proxSensors.countsRightWithLeftLeds() >= 6) || (proxSensors.countsRightWithRightLeds() >= 6)) {
+    } else if ((proxSensors.countsRightWithLeftLeds() >= 5) || (proxSensors.countsRightWithRightLeds() >= 5)) {
 
       ledRed(1);
-      buzzer.playFrequency(500,1000,12);
+      //buzzer.playFrequency(500,1000,12);
       Serial1.print("Person detected in room!");
       delay(200);
       ledRed(0);
-      rotateAngle(-45, TOP_SPEED);
+      rotateAngle(RIGHT_TURN, TOP_SPEED);
       delay(200);
       motors.setSpeeds(100,100);
-      delay(500);
+      delay(400);
       
     }
 
