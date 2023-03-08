@@ -54,7 +54,7 @@ Zumo is placed in the course or on the lines when selecting either option as it 
 these sensors before starting. After both have completed, place the Zumo in the centre of the starting
 area because after 5 seconds it will start moving.
 
-If manual mode is selected, the GUI will open a window with some control buttons on the screen.
+### If manual mode is selected, the GUI will open a window with some control buttons on the screen.
 
 Forward - Moves forwards.
 
@@ -76,7 +76,7 @@ Notify - Makes a high pitched noise. Used to signal if there is a person.
 
 Disconnect - Disables manual mode and returns to main GUI screen.
 
-If semi auto mode is selected, the GUI will also open a window with some controls.
+### If semi auto mode is selected, the GUI will also open a window with some controls.
 
 Forward - Moves forwards.
 
