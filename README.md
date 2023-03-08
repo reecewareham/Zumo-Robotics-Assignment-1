@@ -48,8 +48,15 @@ Installation is quick and easy as it only requires a few steps to get working.
 
 Using the GUI and Zumo is simple. 
 
-Opening the GUI will show you three buttons which indicate the three different modes. Selecting
-either semi auto or full auto modes will initiate a gyro setup and line sensor setup. Make sure the
+Opening the GUI will show you three buttons which indicate the three different modes. 
+
+Manual Mode - Runs the Zumo in manual mode. Use the buttons in the GUI to control the Zumo around the course.
+
+Semi Auto Mode - Runs the Zumo in semi mode. Use the buttons in the GUI to rotate the Zumo around corners.
+
+Full Auto Mode - Runs the Zumo in full auto. Doesn't require the user to do anything.
+
+Selecting either semi auto or full auto modes will initiate a gyro setup and line sensor setup. Make sure the
 Zumo is placed in the course or on the lines when selecting either option as it will need to calibrate
 these sensors before starting. After both have completed, place the Zumo in the centre of the starting
 area because after 5 seconds it will start moving.
