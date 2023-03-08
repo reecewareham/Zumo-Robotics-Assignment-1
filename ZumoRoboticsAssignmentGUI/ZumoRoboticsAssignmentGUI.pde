@@ -10,6 +10,7 @@ GButton RightButton;
 GButton DecreaseSpeedButton; 
 GButton IncreaseSpeedButton; 
 GButton NotifyButton; 
+GButton FinishButton;
 GTextArea MessageReceiveBox; 
 GButton Rotate90Button;
 GButton RotateLeft90Button;
@@ -21,7 +22,7 @@ GWindow SemiAutoControlWindow = null;
 GWindow FullAutoControlWindow = null;
 
 Serial myPort;
-String portName = "COM4";
+String portName = "COM8";
 int speed = 1;
 String message;
 
@@ -129,10 +130,10 @@ void createSemiAutoControlWindow() {
   IncreaseSpeedButton.setText("Increase Speed (+)");
   IncreaseSpeedButton.setLocalColorScheme(GCScheme.GREEN_SCHEME);
   IncreaseSpeedButton.addEventHandler(this, "IncreaseSpeedButtonClick");
-  NotifyButton = new GButton(SemiAutoControlWindow, 250, 350, 300, 100);
-  NotifyButton.setText("Notify");
-  NotifyButton.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
-  NotifyButton.addEventHandler(this, "NotifyButtonClick");
+  FinishButton = new GButton(SemiAutoControlWindow, 250, 350, 300, 100);
+  FinishButton.setText("Finish");
+  FinishButton.setLocalColorScheme(GCScheme.ORANGE_SCHEME);
+  FinishButton.addEventHandler(this, "FinishButtonClick");
   RotateLeft90Button = new GButton(SemiAutoControlWindow, 50, 50, 100, 100);
   RotateLeft90Button.setText("Rotate Left (-90°)");
   RotateLeft90Button.setLocalColorScheme(GCScheme.PURPLE_SCHEME);
@@ -303,3 +304,10 @@ public void Rotate90ButtonClick(GButton source, GEvent event) { //_CODE_:button1
   myPort.write("e");
   
 } //_CODE_:button1:727712:
+
+public void FinishButtonClick(GButton source, GEvent event) { //_CODE_:NotifyButton:586021:
+  println("FinishButton - GButton >> GEvent." + event + " @ " + millis());
+  
+  myPort.write(" ");
+  
+}
