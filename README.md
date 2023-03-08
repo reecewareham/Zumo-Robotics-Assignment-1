@@ -98,6 +98,12 @@ Finish - Notifies the Zumo that the manual control is finished and should return
 
 Disconnect - Disables manual mode and returns to main GUI screen.
 
+## References / Libraries Used
+
+PIDController cpp and header file - Texas Instruments Incorporated
+
+Turn Sensor cpp and header file - Polulu
+
 
 
 
