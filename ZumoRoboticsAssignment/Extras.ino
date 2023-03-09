@@ -5,28 +5,31 @@
 #define UP_BOUND_ROT 1.0
 #define LOW_BOUND_ROT -1.0
 
-//////////////////////////////////////////////////////////////////////////////////
-/*
-  NEEDS COMMENTS
-*/
-//////////////////////////////////////////////////////////////////////////////////
-
 float wrapAngle(float angle) {
+  
   angle = fmod(angle + 180, 360);
+  
   if (angle < 0) {
+    
     angle += 360;
+    
   }
+  
   return (angle - 180);
+  
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 /*
-  NEEDS COMMENTS
+  Function that makes sure that the value is in between the lower bound and the 
+  upper bound.
 */
 //////////////////////////////////////////////////////////////////////////////////
 
 bool inRange(float value, float lowerBound, float upperBound) {
+  
   return ((value > lowerBound) && (value < upperBound));
+  
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -50,6 +53,7 @@ bool rotateAngle(float angle, int topSpeed) {
   targetAngle = wrapAngle(currentHeading + angle);
 
   while(continueLoop) {
+    
     turnSensorUpdate();
     error = wrapAngle(getHeading() - targetAngle);
     motorSpeed = rotationPID.calculate(fabs(error));
@@ -57,17 +61,25 @@ bool rotateAngle(float angle, int topSpeed) {
     continueLoop = !(inRange(fabs(error), LOW_BOUND_ROT, UP_BOUND_ROT));
 
     if(false == continueLoop) {
+      
       motorSpeed = 0;
+      
     }
 
     if (motorSpeed > topSpeed) {
+      
       motorSpeed = topSpeed;
+      
     }
 
     if (error > 0) {
+      
       motors.setSpeeds(motorSpeed, -motorSpeed);
+      
     } else {
+      
       motors.setSpeeds(-motorSpeed, motorSpeed);
+      
     }
   }
 }
@@ -79,7 +91,9 @@ bool rotateAngle(float angle, int topSpeed) {
 //////////////////////////////////////////////////////////////////////////////////
 
 int32_t getAngle() {
+  
   return (((int32_t)turnAngle >> 16) *360) >> 16;
+  
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -92,6 +106,7 @@ int32_t getAngle() {
 
 void printReadingsToSerial()
 {
+  
   static char buffer[80];
   sprintf(buffer, "%4d %4d %4d %4d %4d\n",
     lineSensorValues[0],
@@ -100,7 +115,9 @@ void printReadingsToSerial()
     lineSensorValues[3],
     lineSensorValues[4]
   );
+  
   Serial1.print(buffer);
+  
 }
 
 
@@ -114,6 +131,7 @@ void printReadingsToSerial()
 
 void calibrateLineSensors()
 {
+  
   ledYellow(1);
 
   for(uint16_t i = 0; i < 120; i++)
@@ -129,7 +147,9 @@ void calibrateLineSensors()
 
     lineSensors.calibrate();
   }
+  
   motors.setSpeeds(0, 0);
 
   ledYellow(0);
+  
 }
