@@ -107,10 +107,11 @@ Disconnect - Disables manual mode and returns to main GUI screen.
 
 ## References / Libraries Used
 
-PIDController cpp and header file - Texas Instruments Incorporated
+Paul Vincent Craven. (2016, August 16). Turn / Gyro Sensor Example for Pololu
+Zumo 32U4 Example. https://www.youtube.com/watch?v=XOp22Xx7ZnU
 
-Turn Sensor cpp and header file - Polulu
-
+Pololu Corporation. (n.d.). Zumo32U4 library for Arduino. 
+https://pololu.github.io/zumo-32u4-arduino-library/
 
 
 
